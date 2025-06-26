@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "[Test] ABLY Review Extention",
+  "version": "1.0",
+  "description": "Calls FastAPI from Chrome Extension",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["https://m.a-bly.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "48": "icons/icon.png"
+    }
+  },
+  "content_scripts" : [
+    {
+      "matches": ["https://m.a-bly.com/goods/*"],
+      "css": ["style.css"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

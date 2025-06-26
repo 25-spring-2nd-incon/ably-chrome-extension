@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    command: --secure-file-priv=""
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/data:/data
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-ppassword"]
+      interval: 10s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: fastapi_app
+    ports:
+      # //332
+      # - "8000:8000" 
+      - "80:80"
+    depends_on:
+      db:
+        condition: service_healthy
