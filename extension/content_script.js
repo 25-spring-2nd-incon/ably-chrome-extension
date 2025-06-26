@@ -1,19 +1,24 @@
-//332
-// const SERVER_URL = 'http://localhost:8000'; 
-const SERVER_URL = 'http://163.239.77.62:80';
-
-// -------------------------------------------------------
-// Color assets
-
-const COLOR_POSITIVE = getComputedStyle(document.documentElement).getPropertyValue('--color-positive').trim();
-const COLOR_NEUTRAL = getComputedStyle(document.documentElement).getPropertyValue('--color-neutral').trim();
-const COLOR_NEGATIVE = getComputedStyle(document.documentElement).getPropertyValue('--color-negative').trim();
-
-// -------------------------------------------------------
+const currentUrlPattern = {
+    productPage: /^https:\/\/m\.a-bly\.com\/goods\/\d+$/,
+    sitePage: /^https:\/\/m\.a-bly\.com\//
+};
 
 console.log("[EXTENSION] run content_script.js");
 
 let currentUrl = window.location.href;
+
+function removeLeftPanel() {
+    const panel = document.getElementById('left-dashboard');
+    if (panel) panel.remove();
+}
+function removeRightPanel() {
+    const panel = document.getElementById('right-dashboard');
+    if (panel) panel.remove();
+}
+function removeOpinionContainer() {
+    const container = document.getElementById('opinion-container');
+    if (container) container.remove();
+}
 
 // 대상 요소 동적 탐색
 function findTarget() {
@@ -48,12 +53,6 @@ function createContainer(target) {
 function loadData() {
     return new Promise((resolve, reject) => {
         const urlMatch = window.location.href.match(/goods\/(\d+)/);
-        const opinionElement = document.getElementById('opinion');
-
-        if (!opinionElement) {
-            reject("Opinion element not found");
-            return;
-        }
 
         if (urlMatch) {
             const goodsId = urlMatch[1];
@@ -61,22 +60,16 @@ function loadData() {
             fetch(`${SERVER_URL}/opinion/${goodsId}`)
                 .then(res => res.json())
                 .then(data => {
-
-                    opinionElement.textContent = data.opinions || "Opinion not found";
-                    // opinionElement.textContent = data.product_ID || "Opinion not found";
-                    
                     updateDashboard(goodsId, data.opinion_count || 0, data.opinions || []);
                     resolve(data);
                 })
                 .catch(err => {
                     console.error(err);
-                    opinionElement.textContent = "Error fetching opinion";
                     updateDashboard(goodsId, 0, []);
                     reject(err);
                 });
         } else {
-            opinionElement.textContent = "Invalid URL";
-            reject("Invalid URL structure");
+            reject("⚠️ Invalid URL structure");
         }
     });
 }
@@ -98,12 +91,15 @@ function createLeftPanel() {
     panel.style.padding = '10px';
     panel.style.overflowY = 'auto';
 
+    panel.style.display = 'flex';
+    panel.style.justifyContent = 'center';
+    panel.style.alignItems = 'center';
+    panel.style.flexDirection = 'column';
+
     // 너비 계산
     function adjustWidth() {
         const windowWidth = window.innerWidth;
         const calculatedWidth = (windowWidth - 300) / 2;
-
-        // 최소값 제한
         const width = Math.max(100, calculatedWidth); 
         panel.style.width = `${width}px`;
     }
@@ -113,9 +109,9 @@ function createLeftPanel() {
 
     panel.innerHTML = `
         <div id="service-title-container">
-            감정적 정서 관계
+            ABLY Review Analyzer
             <br>
-            <h1 id="service-title">감. 정. 관.</h1>
+            <h1 id="service-title">리뷰삼총사</h1>
         </div>
     `;
 
@@ -123,11 +119,6 @@ function createLeftPanel() {
     const style = document.createElement('style');
     style.textContent = `
         #service-title-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 150px;
             text-align: center;
         }
         #service-title {
@@ -138,7 +129,49 @@ function createLeftPanel() {
         }
     `;
     document.head.appendChild(style);
+    document.body.appendChild(panel);
+}
 
+function createEmptyRightPanel() {
+    const old = document.getElementById('right-dashboard');
+    if (old) old.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'right-dashboard';
+    panel.style.position = 'fixed';
+    panel.style.top = '0';
+    panel.style.right = '0';
+    panel.style.height = '100%';
+    panel.style.background = '#f9f9f9';
+    panel.style.zIndex = '9999';
+    panel.style.borderLeft = '1px solid #ddd';
+    panel.style.padding = '10px';
+    panel.style.overflowY = 'auto';
+
+    // 너비 계산
+    function adjustWidth() {
+        const windowWidth = window.innerWidth;
+        const calculatedWidth = (windowWidth - 300) / 2;
+        const width = Math.max(100, calculatedWidth); 
+        panel.style.width = `${width}px`;
+    }
+
+    window.addEventListener('resize', adjustWidth);
+    adjustWidth();
+
+    // 내용 컨테이너 (중앙 메시지 삽입 위치)
+    const detailsContainer = document.createElement('div');
+    detailsContainer.id = 'details-container';
+    detailsContainer.style.display = 'flex';
+    detailsContainer.style.justifyContent = 'center';
+    detailsContainer.style.alignItems = 'center';
+    detailsContainer.style.height = '100%';
+    detailsContainer.style.textAlign = 'center';
+    detailsContainer.style.fontFamily = 'Arial, sans-serif';
+    detailsContainer.style.fontSize = '16px';
+    detailsContainer.style.color = '#333';
+
+    panel.appendChild(detailsContainer);
     document.body.appendChild(panel);
 }
 
@@ -173,7 +206,7 @@ function createRightPanel() {
     adjustWidth();
 
     panel.innerHTML = `
-        <h3 style="padding:10px;">📈 Dashboard</h3>
+        <h3 style="padding:10px;">📈 Review Dashboard</h3>
         <div id="legend-container" style="margin-bottom: 10px;">
             <span class="legend-item">
                 <span class="legend-dot sentiment-pos-background"></span> 긍정
@@ -184,11 +217,9 @@ function createRightPanel() {
             <span class="legend-item">
                 <span class="legend-dot sentiment-neg-background"></span> 부정
             </span>
-        </div>
-
-        <div><strong>상품 ID:</strong> <span id="product-id">-</span></div>
-        <div><strong>의견 개수:</strong> <span id="opinions-count">-</span></div> 
-        <div id="details-container">-</div> <br>
+        </div> <br>
+        <div id="opinions-count"></div>
+        <div id="details-container">-</div>
     `;
 
     document.body.appendChild(panel);
@@ -201,10 +232,15 @@ function updateDashboard(productId, reviewCount, opinions = []) {
     const detailsContainer = document.getElementById('details-container');
 
     if (idEl) idEl.textContent = productId;
-    if (reviewEl) reviewEl.textContent = reviewCount;
+    // if (reviewEl) reviewEl.textContent = reviewCount;
 
     // 기존 내용 제거
     detailsContainer.innerHTML = '';
+
+    if (reviewCount == 0) {
+        reviewEl.textContent = "🔍 아직 등록된 리뷰 의견이 없습니다.";
+        reviewEl.style.color = "#9E9E9E";
+    }
 
     // 카테고리별 그룹화
     const grouped = {};
@@ -217,15 +253,10 @@ function updateDashboard(productId, reviewCount, opinions = []) {
 
     for (const category in grouped) {
         const section = document.createElement('div');
-        section.style.marginBottom = '15px';
-        section.style.padding = '10px';
-        section.style.border = '1px solid #ccc';
-        section.style.borderRadius = '5px';
-        section.style.backgroundColor = '#fff';
+        section.classList.add('review-section');
 
         const title = document.createElement('h4');
         title.textContent = `# ${category}`;
-        title.style.marginBottom = '10px';
         section.appendChild(title);
 
         // 의견 정렬
@@ -270,45 +301,30 @@ function waitForTarget(retry = 20, interval = 500) {
 }
 
 function handlePageChange() {
-    waitForTarget().then(target => {
-        console.log("handlePageChange: Successfully found target, load data");
-        createContainer(target);
-        loadData();
+    const isProductPage = currentUrlPattern.productPage.test(window.location.href);
+    const isSitePage = currentUrlPattern.sitePage.test(window.location.href);
+
+    // 항상 LeftPanel 유지
+    if (!document.getElementById('left-dashboard') && isSitePage) {
         createLeftPanel();
-        createRightPanel();
-    }).catch(err => {
-        console.warn(err);
-    });
+    } else if (!isSitePage) {
+        removeLeftPanel();
+    }
+
+    // RightPanel: 상품 상세 페이지일 경우에만 로드
+    if (isProductPage) {
+        waitForTarget().then(target => {
+            loadData();
+            if (!document.getElementById('right-dashboard')) {
+                createRightPanel();
+            }
+        }).catch(err => console.warn(err));
+    } else {
+        removeRightPanel();
+        removeOpinionContainer();
+    }
 }
-// function handlePageChange() {
-//     const target = findTarget();
-//     createContainer(target);
-//     loadData();
-//     createLeftPanel();
-//     createRightPanel();
-// }
 
-// URL 변화 및 DOM 렌더링 감지
-// function observePage() {
-    
-//     const observer = new MutationObserver(() => {
-//         if (window.location.href !== currentUrl) {
-//             console.log("URL 변경 감지");
-//             currentUrl = window.location.href;
-//             handlePageChange();
-//         }
-
-//         // 타겟 요소가 아직 없으면 재시도
-//         const target = findTarget();
-//         if (target && !document.getElementById('opinion-container')) {
-//             console.log("Find target element, insert UI");
-//             createContainer(target);
-//             loadData();
-//         }
-//     });
-
-//     observer.observe(document.body, { childList: true, subtree: true, attributes: false });
-// }
 function observePage() {
     const observer = new MutationObserver(() => {
         if (window.location.href !== currentUrl) {
@@ -338,22 +354,10 @@ function hookUrlChange(callback) {
     window.addEventListener('popstate', callback);
 }
 
-
-// 최초 실행
-// window.addEventListener('load', () => {
-//     createLeftPanel();
-//     createRightPanel();
-//     observePage();
-//     handlePageChange();
-// });
 window.addEventListener('load', () => {
-    createLeftPanel();
-    createRightPanel();
-    observePage();
     handlePageChange();
-
+    observePage();
     hookUrlChange(() => {
-        console.log("hookUrlChange: URL change detected");
         if (window.location.href !== currentUrl) {
             currentUrl = window.location.href;
             handlePageChange();

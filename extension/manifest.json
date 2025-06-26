@@ -1,23 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "[Test] ABLY Review Extention",
+  "name": "ABLY Review Analyzer",
   "version": "1.0",
-  "description": "Calls FastAPI from Chrome Extension",
+  "description": "Korean product review analyzer for quick insights on product detail pages",
   "permissions": ["scripting", "activeTab"],
   "host_permissions": ["https://m.a-bly.com/*"],
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
     "default_icon": {
-      "48": "icons/icon.png"
+      "16": "icons/diamond_shine_16dp.png",
+      "48": "icons/diamond_shine_48dp.png",
+      "128": "icons/diamond_shine_128dp.png"
     }
   },
   "content_scripts" : [
     {
-      "matches": ["https://m.a-bly.com/goods/*"],
+      "matches": ["https://m.a-bly.com/*"],
       "css": ["style.css"],
-      "js": ["content_script.js"],
+      "js": ["config.js", "content_script.js"],
       "run_at": "document_idle"
     }
   ]

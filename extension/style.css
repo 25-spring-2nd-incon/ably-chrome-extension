@@ -98,3 +98,17 @@ h2 {
     border-color: var(--color-negative);
     background-color: var(--color-negative);
 }
+
+.review-section {
+    margin: 0 0 12px 0;
+    padding: 8px 14px 12px 14px;
+    border: 1px solid #DDDDDD;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+.review-section h4 {
+    margin: 4px 0 8px 0;
+    font-size: 15px;
+    font-weight: bold;
+}
