@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS product_opinion (
 
 -- CSV 파일 로드
 
-LOAD DATA INFILE '/data/v2_final_df.csv'
+LOAD DATA INFILE '/data/final_demo.csv'
 INTO TABLE product_opinion
 FIELDS TERMINATED BY ',' 
 ENCLOSED BY '"'

@@ -21,9 +21,7 @@ services:
     build: ./backend
     container_name: fastapi_app
     ports:
-      # //332
       - "8000:8000" 
-      # - "80:80"
     depends_on:
       db:
         condition: service_healthy
